@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dirty Water Distillation Filter | Terminal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --p: #0ea5e9; --border: #e2e8f0; --off: #94a3b8; --on: #10b981; }
+        .dark-mode { --bg: #030712; --card: #0f172a; --text: #f8fafc; --p: #38bdf8; --border: #1e293b; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: 0.3s; overflow-x: hidden; }
+
+        /* ATOMIC LOADER */
+        #preloader { position: fixed; inset: 0; background: #030712; z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .loader { transform: rotateZ(45deg); perspective: 1000px; border-radius: 50%; width: 65px; height: 65px; color: #fff; position: relative; }
+        .loader:before, .loader:after { content: ''; display: block; position: absolute; top: 0; left: 0; width: inherit; height: inherit; border-radius: 50%; transform: rotateX(70deg); animation: 1s spin linear infinite; }
+        .loader:after { color: #FF3D00; transform: rotateY(70deg); animation-delay: .4s; }
+        @keyframes spin { 0%, 100% { box-shadow: .2em 0px 0 0px currentcolor; } 50% { box-shadow: -.2em 0 0 0 currentcolor; } }
+
+        /* SIDEBAR */
+        #sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--card); z-index: 1500; transition: 0.4s; padding: 40px 20px; border-right: 1px solid var(--border); box-sizing: border-box; }
+        #sidebar.open { left: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .menu-item { padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border); }
+        
+        /* SWITCH UI */
+        .switch-ui { position: relative; width: 40px; height: 20px; }
+        .switch-ui input { opacity: 0; width: 0; height: 0; }
+        .slider-ui { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .4s; border-radius: 20px; }
+        .slider-ui:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider-ui { background: var(--p); }
+        input:checked + .slider-ui:before { transform: translateX(20px); }
+
+        main { padding: 80px 40px; max-width: 1200px; margin: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .card { background: var(--card); border-radius: 24px; padding: 30px; border: 1px solid var(--border); }
+        .val { font-size: 4rem; font-weight: 800; color: var(--p); }
+        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body id="b" class="dark-mode">
+
+    <div id="preloader">
+        <div class="loader"></div>
+        <h2 style="color:white; margin:30px 0;">SYSTEM INITIALIZING</h2>
+        <button id="start-btn" onclick="openApp()" style="display:none; background:var(--p); color:white; border:none; padding:12px 45px; border-radius:50px; cursor:pointer; font-weight:bold;">ACTIVATE MONITOR</button>
+    </div>
+
+    <div style="position:fixed; top:25px; left:25px; z-index:1600; cursor:pointer; font-size:1.8rem; color:var(--p);" onmouseenter="tNav()">☰</div>
+
+    <nav id="sidebar" onmouseleave="closeNav()">
+        <h3 style="color:var(--p); border-bottom: 2px solid var(--p); padding-bottom:10px;">SYSTEM OPTIONS</h3>
+        <div class="menu-item" onclick="tTheme()"><i class="fas fa-adjust"></i> Day / Night Mode</div>
+        
+        <div class="menu-item" style="justify-content: space-between;">
+            <span><i class="fas fa-bolt"></i> Electric</span>
+            <label class="switch-ui"><input type="checkbox" id="side-eb" onclick="setMode('electric')"><span class="slider-ui"></span></label>
+        </div>
+        <div class="menu-item" style="justify-content: space-between;">
+            <span><i class="fas fa-fire"></i> Gas Mode</span>
+            <label class="switch-ui"><input type="checkbox" id="side-gb" onclick="setMode('gas')"><span class="slider-ui"></span></label>
+        </div>
+
+        <div class="menu-item" onclick="openQR()"><i class="fas fa-qrcode"></i> Admin & Overview</div>
+        <div class="menu-item" onclick="location.reload()" style="color:red; margin-top:30px;"><i class="fas fa-sync"></i> Reset System</div>
+    </nav>
+
+    <main id="app" style="display:none">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h1>Dirty Water <span style="font-weight:100; color:var(--p)">Distillation Filter</span></h1>
+            <div id="status" style="font-weight:bold; color:#ef4444;">● OFFLINE</div>
+        </div>
+        <div class="grid">
+            <div class="card"><small>TANK WATER LEVEL</small><div class="val" id="wv">0%</div></div>
+            <div class="card">
+                <small>LIVE MODULE STATUS</small>
+                <div style="margin-top:10px;">
+                    <div><span id="d1" style="height:8px; width:8px; border-radius:50%; display:inline-block; background:var(--off)"></span> Pump: <strong id="s1">OFF</strong></div>
+                    <div style="margin-top:5px;"><span id="d2" style="height:8px; width:8px; border-radius:50%; display:inline-block; background:var(--off)"></span> Heater: <strong id="s2">OFF</strong></div>
+                    <div style="margin-top:5px;"><span id="d5" style="height:8px; width:8px; border-radius:50%; display:inline-block; background:var(--off)"></span> Fan: <strong id="s5">OFF</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="margin-top:25px; height: 350px;"><canvas id="chart"></canvas></div>
+    </main>
+
+    <div id="modal">
+        <div style="background:var(--card); padding:40px; border-radius:30px; text-align:center;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
+                <div><h4>ADMIN LOGIN</h4><div id="q1" style="background:white; padding:10px; border-radius:10px;"></div></div>
+                <div><h4>PROJECT OVERVIEW</h4><div id="q2" style="background:white; padding:10px; border-radius:10px;"></div></div>
+            </div>
+            <button onclick="document.getElementById('modal').style.display='none'" style="margin-top:20px; border:none; background:none; color:var(--p); font-weight:bold; cursor:pointer;">CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        const IP = "192.168.137.251"; // Your Hardware IP
+        const LAPTOP_IP = "10.181.223.227"; // Mobile Admin Access
+        let history = Array(20).fill(0);
+
+        function speak(m) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(m)); }
+        window.onload = () => { setTimeout(() => { document.getElementById('start-btn').style.display = 'block'; }, 1500); };
+        
+        function openApp() { 
+            document.getElementById('preloader').style.display='none'; 
+            document.getElementById('app').style.display='block'; 
+            speak("Welcome to your terminal. System is now active.");
+            setInterval(sync, 2000); 
+        }
+
+        function tNav() { document.getElementById('sidebar').classList.add('open'); }
+        function closeNav() { document.getElementById('sidebar').classList.remove('open'); }
+        function tTheme() { document.getElementById('b').classList.toggle('dark-mode'); speak("Theme adjusted."); }
+
+        // UPDATED: Mutual Exclusion Switch Logic
+        async function setMode(m) { 
+            try {
+                if (m === 'electric') {
+                    document.getElementById('side-eb').checked = true;
+                    document.getElementById('side-gb').checked = false; // Interlock UI
+                    speak("Electric heating protocol active. Gas supply cut off.");
+                } else {
+                    document.getElementById('side-gb').checked = true;
+                    document.getElementById('side-eb').checked = false; // Interlock UI
+                    speak("Gas ignition protocol active. Electric heater cut off.");
+                }
+                await fetch(`http://${IP}/setMode?type=${m}`);
+            } catch(e) { speak("Hardware synchronization failed."); }
+        }
+
+        async function sync() {
+            try {
+                const r = await fetch(`http://${IP}/status`);
+                const d = await r.json();
+                document.getElementById('wv').innerText = d.water + "%";
+                document.getElementById('status').innerText = "● ONLINE";
+                document.getElementById('status').style.color = "#10b981";
+
+                document.getElementById('d1').style.background = d.p_act === "true" ? "#10b981" : "#94a3b8";
+                document.getElementById('s1').innerText = d.p_act === "true" ? "ON" : "OFF";
+                
+                // Heating status (Shared LED for Electric/Gas)
+                let activeHeat = (d.r_act === "true" || d.g_act === "true");
+                document.getElementById('d2').style.background = activeHeat ? "#10b981" : "#94a3b8";
+                document.getElementById('s2').innerText = activeHeat ? "ON" : "OFF";
+
+                // Cooling Fan
+                document.getElementById('d5').style.background = d.f_act === "true" ? "#38bdf8" : "#94a3b8";
+                document.getElementById('s5').innerText = d.f_act === "true" ? "RUNNING" : "OFF";
+
+                history.push(d.temp); history.shift(); chart.update('none');
+                if(d.temp >= 110) speak("Critical warning. Boiler temperature is exceeding safe limits.");
+            } catch(e) { document.getElementById('status').innerText = "● OFFLINE"; document.getElementById('status').style.color = "#ef4444"; }
+        }
+
+        function openQR() {
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('q1').innerHTML = ""; document.getElementById('q2').innerHTML = "";
+            new QRCode(document.getElementById("q1"), { text: `http://${LAPTOP_IP}:5500/index.html`, width: 140, height: 140 });
+            new QRCode(document.getElementById("q2"), { text: "https://adityakashyap7.my.canva.site/", width: 140, height: 140 });
+            speak("Scanning codes generated.");
+        }
+
+        const chart = new Chart(document.getElementById('chart'), {
+            type: 'line', data: { labels: Array(20).fill(''), datasets: [{ data: history, borderColor: '#0ea5e9', fill: true, backgroundColor: 'rgba(14, 165, 233, 0.1)', tension: 0.4, pointRadius: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { min: 0, max: 130, grid: { color: '#1e293b' } } } }
+        });
+    </script>
+</body>
+</html>

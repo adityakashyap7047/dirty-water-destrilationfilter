@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Manual Override</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 25px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; border: 1px solid #334155; }
+        button { background: #0ea5e9; border: none; color: white; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 1.1rem; margin: 10px 0; cursor: pointer; }
+        .emergency { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="margin-top:0; color:#0ea5e9;">ADMIN CONTROL</h2>
+        <button onclick="ctrl('pump','on')">ACTIVATE PUMP</button>
+        <button onclick="ctrl('pump','off')" style="background:#475569">STOP PUMP</button>
+        <button onclick="ctrl('rod','on')">START HEATER</button>
+        <button onclick="ctrl('rod','off')" style="background:#475569">STOP HEATER</button>
+        <button class="emergency" onclick="ctrl('all','off')">EMERGENCY STOP</button>
+    </div>
+
+    <script>
+        const ESP_IP = "192.168.137.221"; // Direct Hardware backend
+        function ctrl(d, s) { 
+            fetch(`http://${ESP_IP}/manual?device=${d}&state=${s}`); 
+        }
+    </script>
+</body>
+</html>
